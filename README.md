@@ -35,6 +35,14 @@ docker compose up -d
 
 The `-d` flag is to run it in detached mode - without it, all the logs will appear in your terminal and you will have start a new terminal session to run further commands. It's useful to learn about `docker` and `docker compose` so you understand how to build images and manage containers locally. You can leave this postgres database running, but if you ever want to stop it, you can run `docker compose down`.
 
+Then, you want to install `air` - this will be used for Hot Module Relooading (HMR), which is when your code will be automatically recompiled and run when changes are made:
+
+```bash
+go install github.com/air-verse/air@latest
+```
+
+The configuration for `air` is already present in the `.air.toml` file so you can simply run the command `air` on its own from the root of the project, and your server will be started up with HMR.
+
 ### Local Database migrations (`goose`)
 
 Use the following command to install `goose` locally as it will not be included in the project as a dependency:

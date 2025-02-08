@@ -54,13 +54,13 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-sigChan
-	slog.Warn("Received signal", "signal", sig.String)
+	slog.Warn("Received signal", "signal", sig.String())
 
 	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownRelease()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		slog.Error("HTTP shutdown error", "error", err)
+		slog.Error("HTTP shutdown error occurred", "error", err)
 	}
 	<-shutdownChan
 	close(shutdownChan)
@@ -92,6 +92,9 @@ func setupRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Welcome the go backend starter template!")
+	})
 
 	return mux
 }
@@ -101,7 +104,8 @@ func setupServer(port string) *http.Server {
 		Addr:    ":" + port,
 		Handler: setupRoutes(),
 		BaseContext: func(l net.Listener) context.Context {
-			slog.Info("Server started on port 8080...")
+			url := "http://" + l.Addr().String()
+			slog.Info(fmt.Sprintf("Server started on %s", url))
 			return context.Background()
 		},
 	}
