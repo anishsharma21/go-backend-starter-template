@@ -93,6 +93,8 @@ GOOSE_DBSTRING={${{Postgres.DATABASE_URL}}}
 GOOSE_MIGRATION_DIR=migrations
 ```
 
+Locally, you can also run/skip database migrations by either setting the `RUN_MIGRATION` environment variable to `true` to run them, or anything else to skip them.
+
 ## License
 
 This project is licensed under the MIT License.

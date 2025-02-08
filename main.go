@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"html/template"
 	"log/slog"
 	"net"
 	"net/http"
@@ -111,8 +112,16 @@ func setupRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
+	tmpl, err := template.ParseFiles("templates/index.html")
+	if err != nil {
+		slog.Error("Failed to parse template", "error", err)
+	}
+
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Welcome the go backend starter template!")
+		if err := tmpl.Execute(w, nil); err != nil {
+			slog.Error("Failed to execute template", "error", err)
+		}
 	})
 
 	return mux

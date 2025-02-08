@@ -13,7 +13,7 @@ WORKDIR /
 
 COPY --from=build-stage /main /main
 COPY --from=build-stage /templates /templates
-COPY --from=build-stage /static /static
+# COPY --from=build-stage /static /static
 
 EXPOSE 8080
 
