@@ -2,9 +2,15 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"net"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -14,13 +20,53 @@ func init() {
 }
 
 func main() {
-	_, err := setupDB()
+	conn, err := setupDB()
 	if err != nil {
 		slog.Error("Failed to initialise database connection", "error", err)
 		return
 	}
-
+	defer conn.Close(context.Background())
 	slog.Info("Connected to database successfully.")
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	server := &http.Server{
+		Addr:    ":" + port,
+		Handler: setupRoutes(),
+		BaseContext: func(l net.Listener) context.Context {
+			slog.Info("Server started on port 8080...")
+			return context.Background()
+		},
+	}
+
+	shutdownChan := make(chan bool, 1)
+
+	go func() {
+		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("HTTP server closed early", "error", err)
+		}
+		slog.Info("Stopped server new connections.")
+		shutdownChan <- true
+	}()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-sigChan
+	slog.Warn("Received signal", "signal", sig.String)
+
+	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownRelease()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		slog.Error("HTTP shutdown error", "error", err)
+	}
+	<-shutdownChan
+	close(shutdownChan)
+
+	slog.Info("Graceful server shutdown complete.")
 }
 
 func setupDB() (*pgx.Conn, error) {
@@ -42,4 +88,12 @@ func setupDB() (*pgx.Conn, error) {
 	}
 
 	return conn, nil
+}
+
+func setupRoutes() *http.ServeMux {
+	mux := http.NewServeMux()
+
+	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
+	return mux
 }
