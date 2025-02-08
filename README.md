@@ -83,6 +83,16 @@ With the database running, run the following command to run the migration down:
 goose down
 ```
 
+## Production Deployment
+
+I am using `Railway` to deploy both my postgres database and backend go server. There is a `Dockerfile` in the root of the project that is used for the backend. Private networking with the database is utilised by setting the `DATABASE_URL` and `ENV` variables. The deployment should also wait for CI - i.e. Github actions to complete, before redeploying. Database migrations will be run in production based on whether the environment variable `RUN_MIGRATION` is set to the string `true` - this also requires that you set the following environment variables:
+
+```bash
+GOOSE_DRIVER=postgres
+GOOSE_DBSTRING={${{Postgres.DATABASE_URL}}}
+GOOSE_MIGRATION_DIR=migrations
+```
+
 ## License
 
 This project is licensed under the MIT License.
