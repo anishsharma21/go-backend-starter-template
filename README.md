@@ -8,8 +8,6 @@ Welcome to the repo, this purpose of which is to provide some boiler plate code 
 - **Docker Compose**: Uses Docker Compose for local development setup.
 - **Air**: Supports hot module reloading with Air.
 
-## Work in Progress
-
 This project is a work in progress. Commands to set up the project locally will be provided soon.
 
 ## Getting Started
@@ -36,6 +34,46 @@ docker compose up -d
 ```
 
 The `-d` flag is to run it in detached mode - without it, all the logs will appear in your terminal and you will have start a new terminal session to run further commands. It's useful to learn about `docker` and `docker compose` so you understand how to build images and manage containers locally. You can leave this postgres database running, but if you ever want to stop it, you can run `docker compose down`.
+
+### Local Database migrations (`goose`)
+
+Use the following command to install `goose` locally as it will not be included in the project as a dependency:
+
+```bash
+go install github.com/pressly/goose/v3/cmd/goose@latest
+```
+
+To run database migrations, you'll first need to set some environment variables that goose will use to connect to your database and locate the migration files. These environment variables are for your local database:
+
+```bash
+export GOOSE_DRIVER=postgres
+export GOOSE_DBSTRING="host=localhost port=5432 user=admin password=secret dbname=mydb sslmode=disable"
+export GOOSE_MIGRATION_DIR=migrations
+```
+
+Now, with your database running in the background from the previous `docker compose` instructions, check that `goose` is correctly connected to your database by running the following command:
+
+```bash
+goose status
+```
+
+Ensure your database is running, then, run the following command to run the migration up:
+
+```bash
+goose up
+```
+
+If the migration went well, you should see `OK` messages next to each applied sql file, and the final line should say `successfully migrated database to version: ...`. You can check the status again to confirm the migrations occurred successfully. Further migration files can be created using the following command:
+
+```bash
+goose create {name of migration} sql
+```
+
+With the database running, run the following command to run the migration down:
+
+```bash
+goose down
+```
 
 ## License
 

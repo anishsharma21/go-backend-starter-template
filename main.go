@@ -12,10 +12,16 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/anishsharma21/go-backend-starter-template/internal/types"
 	"github.com/jackc/pgx/v5"
 )
 
+var (
+	env types.Environment
+)
+
 func init() {
+	env = types.StringToEnv(os.Getenv("ENV"))
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 }
 
@@ -33,14 +39,7 @@ func main() {
 		port = "8080"
 	}
 
-	server := &http.Server{
-		Addr:    ":" + port,
-		Handler: setupRoutes(),
-		BaseContext: func(l net.Listener) context.Context {
-			slog.Info("Server started on port 8080...")
-			return context.Background()
-		},
-	}
+	server := setupServer(port)
 
 	shutdownChan := make(chan bool, 1)
 
@@ -70,9 +69,8 @@ func main() {
 }
 
 func setupDB() (*pgx.Conn, error) {
-	env := os.Getenv("ENVIRONMENT")
 	var connStr string
-	if env == "production" || env == "cicd" {
+	if env.IsProduction() || env.IsCICD() {
 		connStr = os.Getenv("DATABASE_URL")
 	} else {
 		connStr = "host=localhost port=5432 user=admin password=secret dbname=mydb sslmode=disable"
@@ -96,4 +94,17 @@ func setupRoutes() *http.ServeMux {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	return mux
+}
+
+func setupServer(port string) *http.Server {
+	server := &http.Server{
+		Addr:    ":" + port,
+		Handler: setupRoutes(),
+		BaseContext: func(l net.Listener) context.Context {
+			slog.Info("Server started on port 8080...")
+			return context.Background()
+		},
+	}
+
+	return server
 }
