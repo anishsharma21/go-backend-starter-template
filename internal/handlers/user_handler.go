@@ -10,6 +10,7 @@ import (
 
 	"github.com/anishsharma21/go-backend-starter-template/internal/types"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -22,7 +23,7 @@ func randString(n int) string {
 	return string(b)
 }
 
-func AddUser(dbConn *pgx.Conn, templates *template.Template) http.Handler {
+func AddUser(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userName := randString(5)
 		userEmail := userName + "@gmail.com"
@@ -36,7 +37,7 @@ func AddUser(dbConn *pgx.Conn, templates *template.Template) http.Handler {
 
 		query := `INSERT INTO users (name, email, password) VALUES (@name, @email, @password)`
 
-		cmdTag, err := dbConn.Exec(context.Background(), query, args)
+		cmdTag, err := dbPool.Exec(context.Background(), query, args)
 		if err != nil {
 			slog.Error("Failed to insert user", "error", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -54,16 +55,17 @@ func AddUser(dbConn *pgx.Conn, templates *template.Template) http.Handler {
 	})
 }
 
-func GetUsers(dbConn *pgx.Conn, templates *template.Template) http.Handler {
+func GetUsers(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		query := `SELECT * FROM users`
 
-		rows, err := dbConn.Query(context.Background(), query)
+		rows, err := dbPool.Query(context.Background(), query)
 		if err != nil {
 			slog.Error("Failed to fetch users", "error", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
+		defer rows.Close()
 
 		var users []types.User
 		users, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.User])
@@ -72,7 +74,6 @@ func GetUsers(dbConn *pgx.Conn, templates *template.Template) http.Handler {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
-		defer rows.Close()
 
 		// This is where the go backend starter template allows you to choose the response type
 		// The default response type is html, but you can choose to get the response in json format
@@ -99,11 +100,11 @@ func GetUsers(dbConn *pgx.Conn, templates *template.Template) http.Handler {
 	})
 }
 
-func DeleteAllUsers(dbConn *pgx.Conn) http.Handler {
+func DeleteAllUsers(dbPool *pgxpool.Pool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		query := `DELETE FROM users`
 
-		cmdTag, err := dbConn.Exec(context.Background(), query)
+		cmdTag, err := dbPool.Exec(context.Background(), query)
 		if err != nil {
 			slog.Error("Failed to delete users", "error", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)

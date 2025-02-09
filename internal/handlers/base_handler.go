@@ -4,11 +4,9 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
-
-	"github.com/jackc/pgx/v5"
 )
 
-func BaseHandler(dbConn *pgx.Conn, tmpl *template.Template) http.Handler {
+func BaseHandler(tmpl *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		err := tmpl.ExecuteTemplate(w, "index.html", nil)
 		if err != nil {

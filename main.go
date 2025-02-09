@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/anishsharma21/go-backend-starter-template/internal/handlers"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 )
@@ -27,6 +27,8 @@ var templateFS embed.FS
 var (
 	env       string
 	dbConnStr string
+
+	dbPool    *pgxpool.Pool
 	templates *template.Template
 )
 
@@ -48,13 +50,41 @@ func init() {
 }
 
 func main() {
-	dbConn, err := setupDB()
+	/*
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+	*/
+
+	dbPool, err := setupDBPool()
 	if err != nil {
-		slog.Error("Failed to initialise database connection", "error", err)
+		slog.Error("Failed to initialise database connection pool", "error", err)
 		return
 	}
-	defer dbConn.Close(context.Background())
-	slog.Info("Connected to database successfully.")
+	defer dbPool.Close()
+
+	/*
+		// Start a goroutine to log database connection pool statistics every minute
+		go func() {
+			ticker := time.NewTicker(1 * time.Minute)
+			defer ticker.Stop()
+
+			for {
+				select {
+				case <-ticker.C:
+					stats := dbPool.Stat()
+					slog.Info(
+						"Database Connection Pool Statistics",
+						"Total Connections", stats.TotalConns(),
+						"Idle Connections", stats.IdleConns(),
+						"Acquired Connections", stats.AcquiredConns(),
+						"Constructing Connections", stats.ConstructingConns(),
+					)
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+	*/
 
 	if os.Getenv("RUN_MIGRATION") == "true" {
 		slog.Info("Attempting to run database migrations...")
@@ -75,7 +105,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:    ":" + port,
-		Handler: setupRoutes(dbConn),
+		Handler: setupRoutes(dbPool),
 		BaseContext: func(l net.Listener) context.Context {
 			url := "http://" + l.Addr().String()
 			slog.Info(fmt.Sprintf("Server started on %s", url))
@@ -110,27 +140,42 @@ func main() {
 	slog.Info("Graceful server shutdown complete.")
 }
 
-func setupDB() (*pgx.Conn, error) {
-	conn, err := pgx.Connect(context.Background(), dbConnStr)
+func setupDBPool() (*pgxpool.Pool, error) {
+	config, err := pgxpool.ParseConfig(dbConnStr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %v\n", err)
+		return nil, fmt.Errorf("Failed to parse database connection string: %v", err)
 	}
 
-	if err = conn.Ping(context.Background()); err != nil {
-		return nil, fmt.Errorf("failed to ping the database: %v\n", err)
+	// Sets the maximum time an idle connection can remain in the pool before being closed
+	config.MaxConnIdleTime = 1 * time.Minute
+
+	dbPool, err := pgxpool.NewWithConfig(context.Background(), config)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to initialise database connection pool: %v", err)
 	}
 
-	return conn, nil
+	conn, err := dbPool.Acquire(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("Failed to acquire database connection from pool: %v", err)
+	}
+	conn.Release()
+
+	err = dbPool.Ping(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("Failed to ping database connection pool: %v", err)
+	}
+
+	return dbPool, nil
 }
 
-func setupRoutes(dbConn *pgx.Conn) *http.ServeMux {
+func setupRoutes(dbPool *pgxpool.Pool) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	mux.Handle("DELETE /users", handlers.DeleteAllUsers(dbConn))
-	mux.Handle("GET /users", handlers.GetUsers(dbConn, templates))
-	mux.Handle("POST /users", handlers.AddUser(dbConn, templates))
+	mux.Handle("DELETE /users", handlers.DeleteAllUsers(dbPool))
+	mux.Handle("GET /users", handlers.GetUsers(dbPool, templates))
+	mux.Handle("POST /users", handlers.AddUser(dbPool, templates))
 
-	mux.Handle("GET /", handlers.BaseHandler(dbConn, templates))
+	mux.Handle("GET /", handlers.BaseHandler(templates))
 	mux.Handle("GET /static", http.StripPrefix("/static", http.FileServer(http.Dir("static"))))
 
 	return mux
