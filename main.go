@@ -126,8 +126,9 @@ func setupDB() (*pgx.Conn, error) {
 func setupRoutes(dbConn *pgx.Conn) *http.ServeMux {
 	mux := http.NewServeMux()
 
+	mux.Handle("POST /users", handlers.AddUser(dbConn))
 	mux.Handle("GET /", handlers.BaseHandler(dbConn, templates))
-	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	mux.Handle("GET /static", http.StripPrefix("/static", http.FileServer(http.Dir("static"))))
 
 	return mux
 }
