@@ -16,12 +16,44 @@
       This is a starter template for building a backend application using Go
       programming language.
     </p>
-    {{ template "button" }}
+    {{ template "index-button-add-user" }}
+    <button
+      hx-get="/users?response_type=json"
+      hx-trigger="click"
+      hx-swap="none"
+    >
+      Get Users (JSON)
+      <button
+        hx-get="/users?response_type=html"
+        hx-trigger="click"
+        hx-target="#users"
+        hx-swap="innerHTML"
+      >
+        Get Users (HTML)
+      </button>
+    </button>
+    <button hx-delete="/users" hx-trigger="click" hx-swap="none">
+      Delete Users
+    </button>
+    <div id="users">{{ template "index-list-users" . }}</div>
   </body>
 </html>
 
-{{ define "button" }}
+<!-- Comments are important to separate partial templates, otherwise they snap together -->
+<!-- Button to add new user -->
+
+{{ define "index-button-add-user" }}
 <button hx-post="/users" hx-trigger="click" hx-swap="outerHTML">
   Create User
 </button>
+{{ end }}
+
+<!-- List of users -->
+
+{{ define "index-list-users" }}
+<ul>
+  {{ range . }}
+  <li>{{ .Name }}</li>
+  {{ end }}
+</ul>
 {{ end }}
