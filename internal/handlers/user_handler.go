@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"html/template"
 	"log/slog"
 	"math/rand"
 	"net/http"
@@ -19,7 +20,7 @@ func randString(n int) string {
 	return string(b)
 }
 
-func AddUser(dbConn *pgx.Conn) http.Handler {
+func AddUser(dbConn *pgx.Conn, templates *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userName := randString(5)
 		userEmail := userName + "@gmail.com"
@@ -36,10 +37,17 @@ func AddUser(dbConn *pgx.Conn) http.Handler {
 		cmdTag, err := dbConn.Exec(context.Background(), query, args)
 		if err != nil {
 			slog.Error("Failed to insert user", "error", err)
-			http.Error(w, "Failed to insert user", http.StatusInternalServerError)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 
 		slog.Info("User added successfully", "command tag", cmdTag.String(), "rows affected", cmdTag.RowsAffected())
+
+		err = templates.ExecuteTemplate(w, "button", nil)
+		if err != nil {
+			slog.Error("Failed to execute template", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 	})
 }
