@@ -12,7 +12,6 @@ FROM gcr.io/distroless/base-debian11
 WORKDIR /
 
 COPY --from=build-stage /main /main
-COPY --from=build-stage /templates /templates
 COPY --from=build-stage /migrations /migrations
 # COPY --from=build-stage /static /static
 

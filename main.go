@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"errors"
 	"fmt"
 	"html/template"
@@ -14,13 +15,20 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/anishsharma21/go-backend-starter-template/internal/handlers"
 	"github.com/jackc/pgx/v5"
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 )
 
-var env string
-var dbConnStr string
+//go:embed templates/*.html
+var templateFS embed.FS
+
+var (
+	env       string
+	dbConnStr string
+	templates *template.Template
+)
 
 func init() {
 	env = os.Getenv("ENV")
@@ -30,15 +38,22 @@ func init() {
 		dbConnStr = "postgresql://admin:secret@localhost:5432/mydb?sslmode=disable"
 	}
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
+	var err error
+	templates, err = template.ParseFS(templateFS, "templates/*.html")
+	if err != nil {
+		slog.Error("Failed to parse templates", "error", err)
+		os.Exit(1)
+	}
 }
 
 func main() {
-	conn, err := setupDB()
+	dbConn, err := setupDB()
 	if err != nil {
 		slog.Error("Failed to initialise database connection", "error", err)
 		return
 	}
-	defer conn.Close(context.Background())
+	defer dbConn.Close(context.Background())
 	slog.Info("Connected to database successfully.")
 
 	if os.Getenv("RUN_MIGRATION") == "true" {
@@ -60,7 +75,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:    ":" + port,
-		Handler: setupRoutes(),
+		Handler: setupRoutes(dbConn),
 		BaseContext: func(l net.Listener) context.Context {
 			url := "http://" + l.Addr().String()
 			slog.Info(fmt.Sprintf("Server started on %s", url))
@@ -108,21 +123,11 @@ func setupDB() (*pgx.Conn, error) {
 	return conn, nil
 }
 
-func setupRoutes() *http.ServeMux {
+func setupRoutes(dbConn *pgx.Conn) *http.ServeMux {
 	mux := http.NewServeMux()
 
+	mux.Handle("GET /", handlers.BaseHandler(dbConn, templates))
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-
-	tmpl, err := template.ParseFiles("templates/index.html")
-	if err != nil {
-		slog.Error("Failed to parse template", "error", err)
-	}
-
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		if err := tmpl.Execute(w, nil); err != nil {
-			slog.Error("Failed to execute template", "error", err)
-		}
-	})
 
 	return mux
 }
@@ -144,6 +149,7 @@ func runMigrations() error {
 	if err != nil {
 		return fmt.Errorf("Failed to open database connection for *sql.DB: %v\n", err)
 	}
+	defer db.Close()
 
 	if err = goose.Status(db, "migrations"); err != nil {
 		return fmt.Errorf("Failed to retrieve status of migrations: %v\n", err)
