@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"html/template"
 	"log/slog"
@@ -37,7 +36,7 @@ func AddUser(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 
 		query := `INSERT INTO users (name, email, password) VALUES (@name, @email, @password)`
 
-		cmdTag, err := dbPool.Exec(context.Background(), query, args)
+		cmdTag, err := dbPool.Exec(r.Context(), query, args)
 		if err != nil {
 			slog.Error("Failed to insert user", "error", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -59,7 +58,7 @@ func GetUsers(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		query := `SELECT * FROM users`
 
-		rows, err := dbPool.Query(context.Background(), query)
+		rows, err := dbPool.Query(r.Context(), query)
 		if err != nil {
 			slog.Error("Failed to fetch users", "error", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -104,7 +103,7 @@ func DeleteAllUsers(dbPool *pgxpool.Pool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		query := `DELETE FROM users`
 
-		cmdTag, err := dbPool.Exec(context.Background(), query)
+		cmdTag, err := dbPool.Exec(r.Context(), query)
 		if err != nil {
 			slog.Error("Failed to delete users", "error", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)

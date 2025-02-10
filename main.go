@@ -50,41 +50,15 @@ func init() {
 }
 
 func main() {
-	/*
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-	*/
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	dbPool, err := setupDBPool()
+	dbPool, err := setupDBPool(ctx)
 	if err != nil {
 		slog.Error("Failed to initialise database connection pool", "error", err)
 		return
 	}
 	defer dbPool.Close()
-
-	/*
-		// Start a goroutine to log database connection pool statistics every minute
-		go func() {
-			ticker := time.NewTicker(1 * time.Minute)
-			defer ticker.Stop()
-
-			for {
-				select {
-				case <-ticker.C:
-					stats := dbPool.Stat()
-					slog.Info(
-						"Database Connection Pool Statistics",
-						"Total Connections", stats.TotalConns(),
-						"Idle Connections", stats.IdleConns(),
-						"Acquired Connections", stats.AcquiredConns(),
-						"Constructing Connections", stats.ConstructingConns(),
-					)
-				case <-ctx.Done():
-					return
-				}
-			}
-		}()
-	*/
 
 	if os.Getenv("RUN_MIGRATION") == "true" {
 		slog.Info("Attempting to run database migrations...")
@@ -109,7 +83,7 @@ func main() {
 		BaseContext: func(l net.Listener) context.Context {
 			url := "http://" + l.Addr().String()
 			slog.Info(fmt.Sprintf("Server started on %s", url))
-			return context.Background()
+			return ctx
 		},
 	}
 
@@ -128,7 +102,7 @@ func main() {
 	sig := <-sigChan
 	slog.Warn("Received signal", "signal", sig.String())
 
-	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, shutdownRelease := context.WithTimeout(ctx, 10*time.Second)
 	defer shutdownRelease()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
@@ -140,7 +114,7 @@ func main() {
 	slog.Info("Graceful server shutdown complete.")
 }
 
-func setupDBPool() (*pgxpool.Pool, error) {
+func setupDBPool(ctx context.Context) (*pgxpool.Pool, error) {
 	config, err := pgxpool.ParseConfig(dbConnStr)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse database connection string: %v", err)
@@ -149,18 +123,18 @@ func setupDBPool() (*pgxpool.Pool, error) {
 	// Sets the maximum time an idle connection can remain in the pool before being closed
 	config.MaxConnIdleTime = 1 * time.Minute
 
-	dbPool, err := pgxpool.NewWithConfig(context.Background(), config)
+	dbPool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initialise database connection pool: %v", err)
 	}
 
-	conn, err := dbPool.Acquire(context.Background())
+	conn, err := dbPool.Acquire(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to acquire database connection from pool: %v", err)
 	}
 	conn.Release()
 
-	err = dbPool.Ping(context.Background())
+	err = dbPool.Ping(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to ping database connection pool: %v", err)
 	}
