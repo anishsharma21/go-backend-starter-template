@@ -22,7 +22,6 @@
       hx-get="/users?response_type=json"
       hx-trigger="click"
       hx-swap="none"
-      hx-indicator="#indicator"
       hx-disabled-elt="this"
     >
       Get Users (JSON)
@@ -33,7 +32,6 @@
       hx-trigger="click"
       hx-target="#users"
       hx-swap="innerHTML"
-      hx-indicator="#indicator"
       hx-disabled-elt="this"
     >
       Get Users (HTML)
@@ -43,26 +41,12 @@
       hx-delete="/users"
       hx-trigger="click"
       hx-swap="none"
-      hx-indicator="#indicator"
+      hx-disabled-elt="this"
     >
       Delete Users
     </button>
-    <div id="indicator">
-      <img class="htmx-indicator" src="/static/spinner.svg" />
-    </div>
-    <div id="users">{{ template "index-list-users" . }}</div>
+    <div id="users" hx-swap-oob="true">{{ template "index-list-users" . }}</div>
   </body>
-  <style>
-    .htmx-indicator {
-      display: none;
-    }
-    .htmx-request .htmx-indicator {
-      display: inline;
-    }
-    .htmx-request.htmx-indicator {
-      display: inline;
-    }
-  </style>
 </html>
 
 <!-- Comments are important to separate partial templates, otherwise they snap together -->
@@ -74,11 +58,16 @@
   hx-post="/users"
   hx-trigger="click"
   hx-swap="outerHTML"
-  hx-indicator="#indicator"
   hx-disabled-elt=".index-button"
 >
   Create User
 </button>
+{{ if .OOBSwap }}
+<div id="users" hx-swap-oob="true">
+  {{ template "index-list-users" .Users }}
+</div>
+{{ end }}
+<!---->
 {{ end }}
 
 <!-- List of users -->

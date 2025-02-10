@@ -123,7 +123,7 @@ func setupDBPool(ctx context.Context) (*pgxpool.Pool, error) {
 	// Sets the maximum time an idle connection can remain in the pool before being closed
 	config.MaxConnIdleTime = 1 * time.Minute
 	// To prevent database and backend from ever sleeping, uncomment the following
-	// config.MinConns = 1
+	config.MinConns = 1
 
 	var dbPool *pgxpool.Pool
 	for i := 1; i <= 5; i++ {

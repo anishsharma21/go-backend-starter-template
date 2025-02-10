@@ -22,6 +22,11 @@ func randString(n int) string {
 	return string(b)
 }
 
+type indexButtonAddUser struct {
+	Users   []types.User
+	OOBSwap bool
+}
+
 func AddUser(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userName := randString(5)
@@ -45,7 +50,29 @@ func AddUser(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 
 		slog.Info("User added successfully", "command tag", cmdTag.String(), "rows affected", cmdTag.RowsAffected())
 
-		err = templates.ExecuteTemplate(w, "index-button-add-user", nil)
+		query = `SELECT * FROM users`
+
+		rows, err := dbPool.Query(r.Context(), query)
+		if err != nil {
+			slog.Error("Failed to fetch users", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var users []types.User
+		users, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.User])
+		if err != nil {
+			slog.Error("Failed to collect users", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		var usersData indexButtonAddUser
+		usersData.Users = users
+		usersData.OOBSwap = true
+
+		err = templates.ExecuteTemplate(w, "index-button-add-user", usersData)
 		if err != nil {
 			slog.Error("Failed to execute template", "error", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -96,6 +123,8 @@ func GetUsers(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 				return
 			}
 		}
+
+		slog.Info("Users fetched successfully")
 	})
 }
 
