@@ -125,23 +125,31 @@ func setupDBPool(ctx context.Context) (*pgxpool.Pool, error) {
 	// To prevent database and backend from ever sleeping, uncomment the following
 	// config.MinConns = 1
 
-	dbPool, err := pgxpool.NewWithConfig(ctx, config)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to initialise database connection pool: %v", err)
+	var dbPool *pgxpool.Pool
+	for i := 1; i <= 5; i++ {
+		dbPool, err = pgxpool.NewWithConfig(ctx, config)
+		if err == nil && dbPool != nil {
+			break
+		}
+		slog.Warn("Failed to initialise database connection pool", "error", err)
+		slog.Info(fmt.Sprintf("Retrying in %d seconds...", i*i))
+		time.Sleep(time.Duration(i*i) * time.Second)
+	}
+	if dbPool == nil {
+		return nil, fmt.Errorf("Failed to initialise database connection pool after 5 attempts")
 	}
 
-	for i := 1; ; i++ {
+	for i := 1; i <= 5; i++ {
 		err = dbPool.Ping(ctx)
-		if err != nil {
-			if i > 5 {
-				return nil, fmt.Errorf("Failed to ping database connection pool: %v", err)
-			}
-			slog.Warn("Failed to ping database connection pool", "error", err)
-			slog.Info(fmt.Sprintf("Retrying in %d seconds...", i*i))
-			time.Sleep(time.Duration(i * i))
-			continue
+		if err == nil && dbPool != nil {
+			break
 		}
-		break
+		slog.Warn("Failed to ping database connection pool", "error", err)
+		slog.Info(fmt.Sprintf("Retrying in %d seconds...", i*i))
+		time.Sleep(time.Duration(i*i) * time.Second)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("Failed to ping database connection pool after 5 attempts")
 	}
 
 	return dbPool, nil
