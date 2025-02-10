@@ -122,21 +122,26 @@ func setupDBPool(ctx context.Context) (*pgxpool.Pool, error) {
 
 	// Sets the maximum time an idle connection can remain in the pool before being closed
 	config.MaxConnIdleTime = 1 * time.Minute
+	// To prevent database and backend from ever sleeping, uncomment the following
+	// config.MinConns = 1
 
 	dbPool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initialise database connection pool: %v", err)
 	}
 
-	conn, err := dbPool.Acquire(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to acquire database connection from pool: %v", err)
-	}
-	conn.Release()
-
-	err = dbPool.Ping(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to ping database connection pool: %v", err)
+	for i := 1; ; i++ {
+		err = dbPool.Ping(ctx)
+		if err != nil {
+			if i > 5 {
+				return nil, fmt.Errorf("Failed to ping database connection pool: %v", err)
+			}
+			slog.Warn("Failed to ping database connection pool", "error", err)
+			slog.Info(fmt.Sprintf("Retrying in %d seconds...", i*i))
+			time.Sleep(time.Duration(i * i))
+			continue
+		}
+		break
 	}
 
 	return dbPool, nil
