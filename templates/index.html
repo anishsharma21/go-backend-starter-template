@@ -16,43 +16,16 @@
       This is a starter template for building a backend application using Go
       programming language.
     </p>
-    {{ template "index-button-add-user" }}
-    <button
-      class="index-button"
-      hx-get="/users?response_type=json"
-      hx-trigger="click"
-      hx-swap="none"
-      hx-disabled-elt="this"
-    >
-      Get Users (JSON)
-    </button>
-    <button
-      class="index-button"
-      hx-get="/users?response_type=html"
-      hx-trigger="click"
-      hx-target="#users"
-      hx-swap="innerHTML"
-      hx-disabled-elt="this"
-    >
-      Get Users (HTML)
-    </button>
-    <button
-      class="index-button"
-      hx-delete="/users"
-      hx-trigger="click"
-      hx-swap="none"
-      hx-disabled-elt="this"
-    >
-      Delete Users
-    </button>
-    <div id="users" hx-swap-oob="true">{{ template "index-list-users" . }}</div>
+    {{ template "index-add-user-button" }} {{ template
+    "index-get-users-json-button" }} {{ template "index-get-users-html-button"
+    }} {{ template "index-delete-users-button" }}
+    <div id="users" hx-swap-oob="true">{{ template "index-user-list" . }}</div>
   </body>
 </html>
 
-<!-- Comments are important to separate partial templates, otherwise they snap together -->
-<!-- Button to add new user -->
+<!-- Add Users Button -->
 
-{{ define "index-button-add-user" }}
+{{ define "index-add-user-button" }}
 <button
   class="index-button"
   hx-post="/users"
@@ -63,19 +36,60 @@
   Create User
 </button>
 {{ if .OOBSwap }}
-<div id="users" hx-swap-oob="true">
-  {{ template "index-list-users" .Users }}
-</div>
+<div id="users" hx-swap-oob="true">{{ template "index-user-list" .Users }}</div>
+{{ end }} {{ end }}
+
+<!-- Get Users JSON button -->
+
+{{ define "index-get-users-json-button" }}
+<button
+  class="index-button"
+  hx-get="/users?response_type=json"
+  hx-trigger="click"
+  hx-swap="none"
+  hx-disabled-elt=".index-button"
+>
+  Get Users (JSON)
+</button>
 {{ end }}
-<!---->
+
+<!-- Get Users HTML button -->
+
+{{ define "index-get-users-html-button" }}
+<button
+  class="index-button"
+  hx-get="/users?response_type=html"
+  hx-trigger="click"
+  hx-target="#users"
+  hx-swap="innerHTML"
+  hx-disabled-elt=".index-button"
+>
+  Get Users (HTML)
+</button>
+{{ end }}
+
+<!-- Delete Users button -->
+
+{{ define "index-delete-users-button" }}
+<button
+  class="index-button"
+  hx-delete="/users"
+  hx-trigger="click"
+  hx-swap="none"
+  hx-disabled-elt=".index-button"
+>
+  Delete Users
+</button>
 {{ end }}
 
 <!-- List of users -->
 
-{{ define "index-list-users" }}
+{{ define "index-user-list" }}
 <ul>
   {{ range . }}
   <li>{{ .Name }}</li>
   {{ end }}
 </ul>
 {{ end }}
+
+<!---->

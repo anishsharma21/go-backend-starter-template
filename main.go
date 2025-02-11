@@ -158,7 +158,7 @@ func setupDBPool(ctx context.Context) (*pgxpool.Pool, error) {
 func setupRoutes(dbPool *pgxpool.Pool) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	mux.Handle("DELETE /users", handlers.DeleteAllUsers(dbPool))
+	mux.Handle("DELETE /users", handlers.DeleteAllUsers(dbPool, templates))
 	mux.Handle("GET /users", handlers.GetUsers(dbPool, templates))
 	mux.Handle("POST /users", handlers.AddUser(dbPool, templates))
 

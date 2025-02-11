@@ -7,7 +7,9 @@ import (
 	"math/rand"
 	"net/http"
 
-	"github.com/anishsharma21/go-backend-starter-template/internal/types"
+	"github.com/anishsharma21/go-backend-starter-template/internal/queries"
+	"github.com/anishsharma21/go-backend-starter-template/internal/types/models"
+	"github.com/anishsharma21/go-backend-starter-template/internal/types/selectors"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -22,8 +24,8 @@ func randString(n int) string {
 	return string(b)
 }
 
-type indexButtonAddUser struct {
-	Users   []types.User
+type indexAddButtonUserModel struct {
+	Users   []models.User
 	OOBSwap bool
 }
 
@@ -50,29 +52,18 @@ func AddUser(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 
 		slog.Info("User added successfully", "command tag", cmdTag.String(), "rows affected", cmdTag.RowsAffected())
 
-		query = `SELECT * FROM users`
-
-		rows, err := dbPool.Query(r.Context(), query)
+		users, err := queries.GetAllUsers(r.Context(), dbPool)
 		if err != nil {
 			slog.Error("Failed to fetch users", "error", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
-		defer rows.Close()
 
-		var users []types.User
-		users, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.User])
-		if err != nil {
-			slog.Error("Failed to collect users", "error", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
+		var templateData indexAddButtonUserModel
+		templateData.Users = users
+		templateData.OOBSwap = true
 
-		var usersData indexButtonAddUser
-		usersData.Users = users
-		usersData.OOBSwap = true
-
-		err = templates.ExecuteTemplate(w, "index-button-add-user", usersData)
+		err = templates.ExecuteTemplate(w, selectors.IndexPage.AddUserButton, templateData)
 		if err != nil {
 			slog.Error("Failed to execute template", "error", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -83,20 +74,9 @@ func AddUser(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 
 func GetUsers(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		query := `SELECT * FROM users`
-
-		rows, err := dbPool.Query(r.Context(), query)
+		users, err := queries.GetAllUsers(r.Context(), dbPool)
 		if err != nil {
 			slog.Error("Failed to fetch users", "error", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-		defer rows.Close()
-
-		var users []types.User
-		users, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.User])
-		if err != nil {
-			slog.Error("Failed to collect users", "error", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
@@ -116,7 +96,7 @@ func GetUsers(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 			}
 		default:
 			w.Header().Set("Content-Type", "text/html")
-			err = templates.ExecuteTemplate(w, "index-list-users", users)
+			err = templates.ExecuteTemplate(w, selectors.IndexPage.UsersList, users)
 			if err != nil {
 				slog.Error("Failed to execute template", "error", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -128,7 +108,7 @@ func GetUsers(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 	})
 }
 
-func DeleteAllUsers(dbPool *pgxpool.Pool) http.Handler {
+func DeleteAllUsers(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		query := `DELETE FROM users`
 
@@ -140,6 +120,23 @@ func DeleteAllUsers(dbPool *pgxpool.Pool) http.Handler {
 		}
 
 		slog.Info("All users deleted successfully", "command tag", cmdTag.String(), "rows affected", cmdTag.RowsAffected())
-		w.WriteHeader(http.StatusNoContent)
+
+		users, err := queries.GetAllUsers(r.Context(), dbPool)
+		if err != nil {
+			slog.Error("Failed to fetch users", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		var templateData indexAddButtonUserModel
+		templateData.Users = users
+		templateData.OOBSwap = true
+
+		err = templates.ExecuteTemplate(w, selectors.IndexPage.AddUserButton, templateData)
+		if err != nil {
+			slog.Error("Failed to execute template", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 	})
 }
