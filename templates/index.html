@@ -9,17 +9,25 @@
       integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
       crossorigin="anonymous"
     ></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    />
   </head>
   <body>
-    <h1>Go Backend Starter Template</h1>
-    <p>
-      This is a starter template for building a backend application using Go
-      programming language.
-    </p>
-    {{ template "index-add-user-button" }} {{ template
-    "index-get-users-json-button" }} {{ template "index-get-users-html-button"
-    }} {{ template "index-delete-users-button" }}
-    <div id="users" hx-swap-oob="true">{{ template "index-user-list" . }}</div>
+    <main class="container">
+      <h1>Go Backend Starter Template</h1>
+      <p>
+        This is a starter template for building a backend application using Go
+        programming language.
+      </p>
+      {{ template "index-add-user-button" }} {{ template
+      "index-get-users-json-button" }} {{ template "index-get-users-html-button"
+      }} {{ template "index-delete-users-button" }}
+      <div id="users" hx-swap-oob="true" style="margin-top: 1rem">
+        {{ template "index-user-list" . }}
+      </div>
+    </main>
   </body>
 </html>
 

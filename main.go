@@ -159,9 +159,13 @@ func setupRoutes(dbPool *pgxpool.Pool) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// JSON subpath for endpoints returns JSON
+	// JSON should be stable and not change much as it represents data
+	// Consumers of these endpoints should be concerned with the JSON structure
 	mux.Handle("GET /json/users", handlers.GetUsersJSON(dbPool))
 
 	// Default subpath for endpoints returns hypermedia
+	// HTML can be dynamic and change a lot as it represents server state
+	// Consumers of these endpoints should not be concerned with the HTML structure
 	mux.Handle("DELETE /users", handlers.DeleteAllUsers(dbPool, templates))
 	mux.Handle("GET /users", handlers.GetUsers(dbPool, templates))
 	mux.Handle("POST /users", handlers.AddUser(dbPool, templates))
