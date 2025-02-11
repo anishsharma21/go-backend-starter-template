@@ -44,7 +44,7 @@
 {{ define "index-get-users-json-button" }}
 <button
   class="index-button"
-  hx-get="/users?response_type=json"
+  hx-get="/json/users"
   hx-trigger="click"
   hx-swap="none"
   hx-disabled-elt=".index-button"
@@ -58,7 +58,7 @@
 {{ define "index-get-users-html-button" }}
 <button
   class="index-button"
-  hx-get="/users?response_type=html"
+  hx-get="/users"
   hx-trigger="click"
   hx-target="#users"
   hx-swap="innerHTML"

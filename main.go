@@ -122,7 +122,7 @@ func setupDBPool(ctx context.Context) (*pgxpool.Pool, error) {
 
 	// Sets the maximum time an idle connection can remain in the pool before being closed
 	config.MaxConnIdleTime = 1 * time.Minute
-	// To prevent database and backend from ever sleeping, uncomment the following
+	// To prevent database and backend from ever sleeping, uncomment the following line
 	config.MinConns = 1
 
 	var dbPool *pgxpool.Pool
@@ -158,6 +158,10 @@ func setupDBPool(ctx context.Context) (*pgxpool.Pool, error) {
 func setupRoutes(dbPool *pgxpool.Pool) *http.ServeMux {
 	mux := http.NewServeMux()
 
+	// JSON subpath for endpoints returns JSON
+	mux.Handle("GET /json/users", handlers.GetUsersJSON(dbPool))
+
+	// Default subpath for endpoints returns hypermedia
 	mux.Handle("DELETE /users", handlers.DeleteAllUsers(dbPool, templates))
 	mux.Handle("GET /users", handlers.GetUsers(dbPool, templates))
 	mux.Handle("POST /users", handlers.AddUser(dbPool, templates))

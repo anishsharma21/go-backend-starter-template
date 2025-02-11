@@ -81,30 +81,35 @@ func GetUsers(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 			return
 		}
 
-		// This is where the go backend starter template allows you to choose the response type
-		// The default response type is html, but you can choose to get the response in json format
-		// For instance, if you are building a mobile app, you can choose json as the response type
-		responseType := r.URL.Query().Get("response_type")
-
-		switch responseType {
-		case "json":
-			w.Header().Set("Content-Type", "application/json")
-			if err = json.NewEncoder(w).Encode(users); err != nil {
-				slog.Error("Failed to encode users", "error", err)
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-				return
-			}
-		default:
-			w.Header().Set("Content-Type", "text/html")
-			err = templates.ExecuteTemplate(w, selectors.IndexPage.UsersList, users)
-			if err != nil {
-				slog.Error("Failed to execute template", "error", err)
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-				return
-			}
+		w.Header().Set("Content-Type", "text/html")
+		err = templates.ExecuteTemplate(w, selectors.IndexPage.UsersList, users)
+		if err != nil {
+			slog.Error("Failed to execute template", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
 		}
 
 		slog.Info("Users fetched successfully")
+	})
+}
+
+func GetUsersJSON(dbPool *pgxpool.Pool) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		users, err := queries.GetAllUsers(r.Context(), dbPool)
+		if err != nil {
+			slog.Error("Failed to fetch users", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err = json.NewEncoder(w).Encode(users); err != nil {
+			slog.Error("Failed to encode users", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		slog.Info("Users JSON data fetched successfully")
 	})
 }
 
