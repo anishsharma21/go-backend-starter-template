@@ -1,3 +1,6 @@
+<!-- Base HTML template -->
+
+{{ define "base-html" }}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -15,89 +18,52 @@
     />
   </head>
   <body>
-    <main class="container">
-      <h1>Go Backend Starter Template</h1>
-      <p>
-        This is a starter template for building a backend application using Go
-        programming language.
-      </p>
-      {{ template "index-add-user-button" }} {{ template
-      "index-get-users-json-button" }} {{ template "index-get-users-html-button"
-      }} {{ template "index-delete-users-button" }}
-      <div id="users" hx-swap-oob="true" style="margin-top: 1rem">
-        {{ template "index-user-list" . }}
-      </div>
-    </main>
+    {{ template "signup-component" . }}
   </body>
 </html>
-
-<!-- Add Users Button -->
-
-{{ define "index-add-user-button" }}
-<button
-  class="index-button"
-  hx-post="/users"
-  hx-trigger="click"
-  hx-swap="outerHTML"
-  hx-disabled-elt=".index-button"
->
-  Create User
-</button>
-{{ if .OOBSwap }}
-<div id="users" hx-swap-oob="true">{{ template "index-user-list" .Users }}</div>
-{{ end }} {{ end }}
-
-<!-- Get Users JSON button -->
-
-{{ define "index-get-users-json-button" }}
-<button
-  class="index-button"
-  hx-get="/json/users"
-  hx-trigger="click"
-  hx-swap="none"
-  hx-disabled-elt=".index-button"
->
-  Get Users (JSON)
-</button>
 {{ end }}
 
-<!-- Get Users HTML button -->
+<!-- Sign-up Component -->
 
-{{ define "index-get-users-html-button" }}
-<button
-  class="index-button"
-  hx-get="/users"
-  hx-trigger="click"
-  hx-target="#users"
-  hx-swap="innerHTML"
-  hx-disabled-elt=".index-button"
->
-  Get Users (HTML)
-</button>
+{{ define "signup-component" }}
+<main class="container" style="width: 50%">
+  <article class="grid">
+    <div class="card">
+      <header>
+        <h2>Login</h2>
+      </header>
+      <!-- needs to be updated to use HTMX instead -->
+      <form action="/login" method="POST">
+        <div class="form-group">
+          <label for="email">
+            Email address
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="you@example.com"
+              required
+            />
+          </label>
+        </div>
+        <div class="form-group">
+          <label for="password">
+            Password
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="••••••••"
+              required
+            />
+          </label>
+        </div>
+        <button type="submit" class="contrast">Login</button>
+      </form>
+      <footer>
+        <p>Don't have an account? <a href="/register">Sign up</a></p>
+      </footer>
+    </div>
+  </article>
+</main>
 {{ end }}
-
-<!-- Delete Users button -->
-
-{{ define "index-delete-users-button" }}
-<button
-  class="index-button"
-  hx-delete="/users"
-  hx-trigger="click"
-  hx-swap="none"
-  hx-disabled-elt=".index-button"
->
-  Delete Users
-</button>
-{{ end }}
-
-<!-- List of users -->
-
-{{ define "index-user-list" }}
-<ul>
-  {{ range . }}
-  <li>{{ .Name }}</li>
-  {{ end }}
-</ul>
-{{ end }}
-
-<!---->

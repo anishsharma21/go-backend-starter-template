@@ -63,7 +63,7 @@ func AddUser(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 		templateData.Users = users
 		templateData.OOBSwap = true
 
-		err = templates.ExecuteTemplate(w, selectors.IndexPage.AddUserButton, templateData)
+		err = templates.ExecuteTemplate(w, selectors.UsersPage.AddUserButton, templateData)
 		if err != nil {
 			slog.Error("Failed to execute template", "error", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -82,7 +82,7 @@ func GetUsers(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 		}
 
 		w.Header().Set("Content-Type", "text/html")
-		err = templates.ExecuteTemplate(w, selectors.IndexPage.UsersList, users)
+		err = templates.ExecuteTemplate(w, selectors.UsersPage.UsersList, users)
 		if err != nil {
 			slog.Error("Failed to execute template", "error", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -137,7 +137,7 @@ func DeleteAllUsers(dbPool *pgxpool.Pool, templates *template.Template) http.Han
 		templateData.Users = users
 		templateData.OOBSwap = true
 
-		err = templates.ExecuteTemplate(w, selectors.IndexPage.AddUserButton, templateData)
+		err = templates.ExecuteTemplate(w, selectors.UsersPage.AddUserButton, templateData)
 		if err != nil {
 			slog.Error("Failed to execute template", "error", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)

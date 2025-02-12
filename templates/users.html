@@ -1,0 +1,92 @@
+<!-- users.html -->
+
+{{ define "users-view" }}
+<main class="container">
+  <h1>Go Backend Starter Template</h1>
+  <p>
+    This is a starter template for building a backend application using Go
+    programming language.
+  </p>
+  {{ template "index-add-user-button" }}
+  <!---->
+  {{ template "index-get-users-json-button" }}
+  <!---->
+  {{ template "index-get-users-html-button" }}
+  <!---->
+  {{ template "index-delete-users-button" }}
+  <div id="users" hx-swap-oob="true" style="margin-top: 1rem">
+    {{ template "index-user-list" . }}
+  </div>
+</main>
+{{ end }}
+
+<!-- Add Users Button -->
+
+{{ define "index-add-user-button" }}
+<button
+  class="index-button"
+  hx-post="/users"
+  hx-trigger="click"
+  hx-swap="outerHTML"
+  hx-disabled-elt=".index-button"
+>
+  Create User
+</button>
+{{ if .OOBSwap }}
+<div id="users" hx-swap-oob="true">{{ template "index-user-list" .Users }}</div>
+{{ end }} {{ end }}
+
+<!-- Get Users JSON button -->
+
+{{ define "index-get-users-json-button" }}
+<button
+  class="index-button"
+  hx-get="/json/users"
+  hx-trigger="click"
+  hx-swap="none"
+  hx-disabled-elt=".index-button"
+>
+  Get Users (JSON)
+</button>
+{{ end }}
+
+<!-- Get Users HTML button -->
+
+{{ define "index-get-users-html-button" }}
+<button
+  class="index-button"
+  hx-get="/users"
+  hx-trigger="click"
+  hx-target="#users"
+  hx-swap="innerHTML"
+  hx-disabled-elt=".index-button"
+>
+  Get Users (HTML)
+</button>
+{{ end }}
+
+<!-- Delete Users button -->
+
+{{ define "index-delete-users-button" }}
+<button
+  class="index-button"
+  hx-delete="/users"
+  hx-trigger="click"
+  hx-swap="none"
+  hx-disabled-elt=".index-button"
+>
+  Delete Users
+</button>
+{{ end }}
+
+<!-- List of users -->
+
+{{ define "index-user-list" }}
+<ul>
+  {{ range . }}
+  <li>{{ .Name }}</li>
+  {{ end }}
+</ul>
+{{ end }}
+
+<!---->
