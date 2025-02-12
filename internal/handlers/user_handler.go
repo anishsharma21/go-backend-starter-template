@@ -24,7 +24,7 @@ func randString(n int) string {
 	return string(b)
 }
 
-type indexAddButtonUserModel struct {
+type addUserButtonModel struct {
 	Users   []models.User
 	OOBSwap bool
 }
@@ -59,7 +59,7 @@ func AddUser(dbPool *pgxpool.Pool, templates *template.Template) http.Handler {
 			return
 		}
 
-		var templateData indexAddButtonUserModel
+		var templateData addUserButtonModel
 		templateData.Users = users
 		templateData.OOBSwap = true
 
@@ -133,7 +133,7 @@ func DeleteAllUsers(dbPool *pgxpool.Pool, templates *template.Template) http.Han
 			return
 		}
 
-		var templateData indexAddButtonUserModel
+		var templateData addUserButtonModel
 		templateData.Users = users
 		templateData.OOBSwap = true
 
