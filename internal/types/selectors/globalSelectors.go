@@ -1,11 +1,17 @@
 package selectors
 
 type indexPage struct {
-	BaseHTML string
+	BaseHTML        string
+	AuthComponent   string
+	LoginComponent  string
+	SignUpComponent string
 }
 
 var IndexPage = indexPage{
-	BaseHTML: "base-html",
+	BaseHTML:        "base-html",
+	AuthComponent:   "auth-component",
+	LoginComponent:  "login-component",
+	SignUpComponent: "signup-component",
 }
 
 type usersPage struct {

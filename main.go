@@ -169,8 +169,12 @@ func setupRoutes(dbPool *pgxpool.Pool) *http.ServeMux {
 	mux.Handle("DELETE /users", handlers.DeleteAllUsers(dbPool, templates))
 	mux.Handle("GET /users", handlers.GetUsers(dbPool, templates))
 	mux.Handle("POST /users", handlers.AddUser(dbPool, templates))
-
+	mux.Handle("GET /login", handlers.LoginHandler(templates))
+	// mux.Handle("POST /login", nil)
+	mux.Handle("GET /signup", handlers.SignUpHandler(templates))
+	// mux.Handle("POST /signup", nil)
 	mux.Handle("GET /", handlers.BaseHandler(templates))
+
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	return mux

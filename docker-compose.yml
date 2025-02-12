@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16
+    image: postgres:15
     container_name: go_backend_starter_template_db
     restart: always
     environment:

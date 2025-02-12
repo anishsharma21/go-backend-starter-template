@@ -90,9 +90,9 @@ When updating templates or handlers that render them, make sure to reference the
 I am using `Railway` to deploy both my postgres database and backend go server. There is a `Dockerfile` in the root of the project that is used for the backend. Private networking with the database is utilised by setting the `DATABASE_URL` and `ENV` variables. The deployment should also wait for CI - i.e. Github actions to complete, before redeploying. Database migrations will be run in production based on whether the environment variable `RUN_MIGRATION` is set to the string `true` - this also requires that you set the following environment variables:
 
 ```bash
-GOOSE_DRIVER=postgres
-GOOSE_DBSTRING={${{Postgres.DATABASE_URL}}}
-GOOSE_MIGRATION_DIR=migrations
+export GOOSE_DRIVER=postgres
+export GOOSE_DBSTRING={${{Postgres.DATABASE_URL}}}
+export GOOSE_MIGRATION_DIR=migrations
 ```
 
 Locally, you can also run/skip database migrations by either setting the `RUN_MIGRATION` environment variable to `true` to run them, or anything else to skip them.
