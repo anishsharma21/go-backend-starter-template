@@ -35,7 +35,9 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 		err := VerifyToken(tokenString)
 		if err != nil {
-			slog.Error("Invalid JWT token received", "error", err)
+			slog.Error("Invalid JWT token received", "error", err, "token", tokenString)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
 		}
 
 		next.ServeHTTP(w, r)
