@@ -28,3 +28,16 @@ func GetUsers(dbPool *pgxpool.Pool) http.Handler {
 		slog.Info("Users JSON data fetched successfully")
 	})
 }
+
+func DeleteUsers(dbPool *pgxpool.Pool) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		err := queries.DeleteAllUsers(r.Context(), dbPool)
+		if err != nil {
+			slog.Error("Failed to delete users", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+	})
+}

@@ -3,6 +3,7 @@ package queries
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/anishsharma21/go-backend-starter-template/internal/types/models"
 	"github.com/jackc/pgx/v5"
@@ -25,4 +26,30 @@ func GetAllUsers(ctx context.Context, dbPool *pgxpool.Pool) ([]models.User, erro
 	}
 
 	return users, nil
+}
+
+func DeleteAllUsers(ctx context.Context, dbPool *pgxpool.Pool) error {
+	query := `DELETE FROM users`
+
+	slog.Info("Delete users transaction beginning...")
+
+	tx, err := dbPool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("Failed to start transaction: %v\n", err)
+	}
+	defer tx.Rollback(ctx)
+
+	ct, err := tx.Exec(ctx, query)
+	if err != nil {
+		return fmt.Errorf("Failed to delete users: %v\n", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("Failed to commit transaction: %v\n", err)
+	}
+
+	slog.Info("Delete users transaction completed successfully.", "count", ct.RowsAffected())
+
+	return nil
 }
