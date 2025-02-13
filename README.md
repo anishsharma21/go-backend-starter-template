@@ -51,7 +51,7 @@ Use the following command to install `goose` locally as it will not be included 
 go install github.com/pressly/goose/v3/cmd/goose@latest
 ```
 
-To run database migrations, you'll first need to set some environment variables that goose will use to connect to your database and locate the migration files. These environment variables are for your local database:
+To run database migrations, you'll first need to set some environment variables that goose will use to connect to your database and locate the migration files. These environment variables are for your local database.:
 
 ```bash
 export GOOSE_DRIVER=postgres
@@ -90,9 +90,10 @@ When updating templates or handlers that render them, make sure to reference the
 I am using `Railway` to deploy both my postgres database and backend go server. There is a `Dockerfile` in the root of the project that is used for the backend. Private networking with the database is utilised by setting the `DATABASE_URL` and `ENV` variables. The deployment should also wait for CI - i.e. Github actions to complete, before redeploying. Database migrations will be run in production based on whether the environment variable `RUN_MIGRATION` is set to the string `true` - this also requires that you set the following environment variables:
 
 ```bash
-export GOOSE_DRIVER=postgres
-export GOOSE_DBSTRING={${{Postgres.DATABASE_URL}}}
-export GOOSE_MIGRATION_DIR=migrations
+GOOSE_DRIVER=postgres
+GOOSE_DBSTRING={${{Postgres.DATABASE_URL}}}
+GOOSE_MIGRATION_DIR=migrations
+JWT_SECRET_KEY={SET_A_SECURE_KEY}
 ```
 
 Locally, you can also run/skip database migrations by either setting the `RUN_MIGRATION` environment variable to `true` to run them, or anything else to skip them.

@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/anishsharma21/go-backend-starter-template/internal/handlers"
+	"github.com/anishsharma21/go-backend-starter-template/internal/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
@@ -47,6 +48,7 @@ func init() {
 		slog.Error("Failed to parse templates", "error", err)
 		os.Exit(1)
 	}
+	slog.Info("Templates parsed successfully")
 }
 
 func main() {
@@ -158,23 +160,18 @@ func setupDBPool(ctx context.Context) (*pgxpool.Pool, error) {
 func setupRoutes(dbPool *pgxpool.Pool) *http.ServeMux {
 	mux := http.NewServeMux()
 
+	// Default subpath for endpoints return JSON
 	// JSON subpath for endpoints returns JSON
 	// JSON should be stable and not change much as it represents data
 	// Consumers of these endpoints should be concerned with the JSON structure
-	mux.Handle("GET /json/users", handlers.GetUsersJSON(dbPool))
+	mux.Handle("GET /users", middleware.JWTAuthMiddleware(handlers.GetUsers(dbPool)))
+	mux.Handle("POST /login", handlers.HandleLoginRequest(dbPool))
 
-	// Default subpath for endpoints returns hypermedia
 	// HTML can be dynamic and change a lot as it represents server state
 	// Consumers of these endpoints should not be concerned with the HTML structure
-	mux.Handle("DELETE /users", handlers.DeleteAllUsers(dbPool, templates))
-	mux.Handle("GET /users", handlers.GetUsers(dbPool, templates))
-	mux.Handle("POST /users", handlers.AddUser(dbPool, templates))
-	mux.Handle("GET /login", handlers.LoginHandler(templates))
-	// mux.Handle("POST /login", nil)
-	mux.Handle("GET /signup", handlers.SignUpHandler(templates))
-	// mux.Handle("POST /signup", nil)
-	mux.Handle("GET /", handlers.BaseHandler(templates))
+	// example: mux.Handle("GET /users/view", handlers.GetUsersView(dbPool, templates))
 
+	mux.Handle("GET /", handlers.RenderBaseView(templates))
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	return mux
