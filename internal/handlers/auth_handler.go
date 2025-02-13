@@ -80,7 +80,7 @@ func HandleLoginRequest(dbPool *pgxpool.Pool) http.Handler {
 
 		user, err := queries.GetUserByEmail(r.Context(), dbPool, email)
 		if err != nil {
-			slog.Error("Failed to find user when logging in: %v\n", err)
+			slog.Error("Failed to find user when logging in", "error", err)
 			http.Error(w, "User not found", http.StatusNotFound)
 			return
 		}
