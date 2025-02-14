@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/anishsharma21/go-backend-starter-template/internal/middleware"
 	"github.com/anishsharma21/go-backend-starter-template/internal/queries"
@@ -13,7 +14,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func HandleSignUpRequest(dbPool *pgxpool.Pool) http.Handler {
+func SignUp(dbPool *pgxpool.Pool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		email := template.HTMLEscapeString(r.FormValue("email"))
 		firstName := template.HTMLEscapeString(r.FormValue("first_name"))
@@ -46,15 +47,32 @@ func HandleSignUpRequest(dbPool *pgxpool.Pool) http.Handler {
 		}
 		slog.Info("New user signed up", "email", email, "first_name", firstName, "last_name", lastName)
 
-		jwtToken, err := middleware.CreateToken(email)
+		accessToken, err := middleware.CreateAccessToken(email)
 		if err != nil {
 			slog.Error("Failed to create JWT token", "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
+		refreshToken, err := middleware.CreateRefreshToken(email)
+		if err != nil {
+			slog.Error("Failed to create refresh token", "error", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refresh_token",
+			Value:    refreshToken,
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+			Expires:  time.Now().Add(24 * 7 * time.Hour),
+		})
+
 		response := map[string]string{
-			"token": jwtToken,
+			"token": accessToken,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -67,7 +85,7 @@ func HandleSignUpRequest(dbPool *pgxpool.Pool) http.Handler {
 	})
 }
 
-func HandleLoginRequest(dbPool *pgxpool.Pool) http.Handler {
+func Login(dbPool *pgxpool.Pool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		email := template.HTMLEscapeString(r.FormValue("email"))
 		password := template.HTMLEscapeString(r.FormValue("password"))
@@ -98,15 +116,32 @@ func HandleLoginRequest(dbPool *pgxpool.Pool) http.Handler {
 			return
 		}
 
-		jwtToken, err := middleware.CreateToken(user.Email)
+		accessToken, err := middleware.CreateAccessToken(user.Email)
 		if err != nil {
 			slog.Error("Failed to create JWT token", "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
+		refreshToken, err := middleware.CreateRefreshToken(email)
+		if err != nil {
+			slog.Error("Failed to create refresh token", "error", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refresh_token",
+			Value:    refreshToken,
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+			Expires:  time.Now().Add(24 * 7 * time.Hour),
+		})
+
 		response := map[string]string{
-			"token": jwtToken,
+			"token": accessToken,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -116,5 +151,10 @@ func HandleLoginRequest(dbPool *pgxpool.Pool) http.Handler {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
+	})
+}
+
+func RefreshToken() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	})
 }
