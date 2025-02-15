@@ -39,7 +39,7 @@ jobs:
         env:
           DATABASE_URL: postgres://testuser:testpassword@localhost:5432/testdb?sslmode=disable
           GOOSE_DRIVER: postgres
-          GOOSE_DB_STRING: "host=localhost port=5432 user=testuser password=testpassword dbname=testdb sslmode=disable"
+          GOOSE_DBSTRING: "host=localhost port=5432 user=testuser password=testpassword dbname=testdb sslmode=disable"
           GOOSE_MIGRATION_DIR: migrations
         run: |
           goose status
