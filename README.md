@@ -8,8 +8,6 @@ Welcome to the repo, this purpose of which is to provide some boiler plate code 
 - **Docker Compose**: Uses Docker Compose for local development setup.
 - **Air**: Supports hot module reloading with Air.
 
-This project is a work in progress. Commands to set up the project locally will be provided soon.
-
 ## Getting Started
 
 To get started with this project, clone the repository and follow the instructions below (more instructions will be added soon).
@@ -85,11 +83,10 @@ goose down
 
 When updating templates or handlers that render them, make sure to reference the `globalSelectors.go` file where CSS selectors are present in to reduce hard coded values and duplication throughout the code.
 
-You should also set the following environment variables locally for testing and development purposes:
+You should also set the following environment variable locally for testing and development purposes:
 
 ```bash
 export JWT_SECRET_KEY=secret
-export DATABASE_URL="postgresql://admin:secret@localhost:5432/mydb?sslmode=disable"
 ```
 
 Tests run locally use the local postgres database. To replicate the CICD environment, you can clear your database before running the tests. Use the following command to run tests locally:
@@ -103,10 +100,12 @@ go test ./tests -v
 I am using `Railway` to deploy both my postgres database and backend go server. There is a `Dockerfile` in the root of the project that is used for the backend. Private networking with the database is utilised by setting the `DATABASE_URL` and `ENV` variables. The deployment should also wait for CI - i.e. Github actions to complete, before redeploying. Database migrations will be run in production based on whether the environment variable `RUN_MIGRATION` is set to the string `true` - this also requires that you set the following environment variables:
 
 ```bash
+DATABASE_URL={${{Postgres.DATABASE_URL}}}
 GOOSE_DRIVER=postgres
 GOOSE_DBSTRING={${{Postgres.DATABASE_URL}}}
 GOOSE_MIGRATION_DIR=migrations
 JWT_SECRET_KEY={SET_A_SECURE_KEY}
+RUN_MIGRATION={TRUE_OR_ANYTHINGELSE}
 ```
 
 Locally, you can also run/skip database migrations by either setting the `RUN_MIGRATION` environment variable to `true` to run them, or anything else to skip them.
