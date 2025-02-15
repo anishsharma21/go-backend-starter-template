@@ -13,6 +13,7 @@ jobs:
           POSTGRES_USER: testuser
           POSTGRES_PASSWORD: testpassword
           POSTGRES_DB: testdb
+          JWT_SECRET_KEY: secretkey
         ports:
           - 5432:5432
         options: >-
