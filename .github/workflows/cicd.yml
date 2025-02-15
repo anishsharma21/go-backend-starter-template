@@ -4,7 +4,7 @@ on:
     branches: [main]
 
 jobs:
-  run-tests:
+  Pre-deploy-pipeline:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -31,6 +31,9 @@ jobs:
 
       - name: Install dependencies
         run: go mod download
+
+      - name: Install Goose
+        run: go install -u github.com/pressly/goose/v3/cmd/goose@latest
 
       - name: Run Goose migrations
         env:
