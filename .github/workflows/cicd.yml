@@ -34,4 +34,4 @@ jobs:
           ENV: cicd
           DATABASE_URL: postgres://testuser:testpassword@localhost:5432/testdb?sslmode=disable
           JWT_SECRET_KEY: secretkey
-        run: go test ./... -v
+        run: go test ./tests -v

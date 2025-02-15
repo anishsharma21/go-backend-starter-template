@@ -51,7 +51,7 @@ Use the following command to install `goose` locally as it will not be included 
 go install github.com/pressly/goose/v3/cmd/goose@latest
 ```
 
-To run database migrations, you'll first need to set some environment variables that goose will use to connect to your database and locate the migration files. These environment variables are for your local database.:
+To run database migrations, you'll first need to set some environment variables that goose will use to connect to your database and locate the migration files. These environment variables are for your local database:
 
 ```bash
 export GOOSE_DRIVER=postgres
@@ -84,6 +84,19 @@ goose down
 ```
 
 When updating templates or handlers that render them, make sure to reference the `globalSelectors.go` file where CSS selectors are present in to reduce hard coded values and duplication throughout the code.
+
+You should also set the following environment variables locally for testing and development purposes:
+
+```bash
+export JWT_SECRET_KEY=secret
+export DATABASE_URL="postgresql://admin:secret@localhost:5432/mydb?sslmode=disable"
+```
+
+Tests run locally use the local postgres database. To replicate the CICD environment, you can clear your database before running the tests. Use the following command to run tests locally:
+
+```bash
+go test ./tests -v
+```
 
 ## Production Deployment
 
