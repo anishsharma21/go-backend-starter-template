@@ -29,9 +29,25 @@ jobs:
         with:
           go-version: "1.23.x"
 
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run Goose migrations
+        env:
+          DATABASE_URL: postgres://testuser:testpassword@localhost:5432/testdb?sslmode=disable
+          GOOSE_DRIVER: postgres
+          GOOSE_DB_STRING: "host=localhost port=5432 user=testuser password=testpassword dbname=testdb sslmode=disable"
+          GOOSE_MIGRATION_DIR: migrations
+        run: |
+          goose status
+          goose up
+
       - name: Run Tests
         env:
           ENV: cicd
           DATABASE_URL: postgres://testuser:testpassword@localhost:5432/testdb?sslmode=disable
           JWT_SECRET_KEY: secretkey
         run: go test ./tests -v
+
+      - name: Build
+        run: go build -o app
