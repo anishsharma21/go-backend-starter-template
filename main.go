@@ -34,14 +34,18 @@ var (
 )
 
 func init() {
+	// Determine environment (production, development, cicd)
 	env = os.Getenv("ENV")
 	if env == "production" || env == "cicd" {
 		dbConnStr = os.Getenv("DATABASE_URL")
 	} else {
 		dbConnStr = "postgresql://admin:secret@localhost:5432/mydb?sslmode=disable"
 	}
+
+	// Set up slog as default logger across the application
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
+	// Parse html templates
 	var err error
 	templates, err = template.ParseFS(templateFS, "templates/*.html")
 	if err != nil {
@@ -52,9 +56,11 @@ func init() {
 }
 
 func main() {
+	// Setup context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Setup database connection pool
 	dbPool, err := setupDBPool(ctx)
 	if err != nil {
 		slog.Error("Failed to initialise database connection pool", "error", err)
@@ -62,6 +68,7 @@ func main() {
 	}
 	defer dbPool.Close()
 
+	// Run database migrations if environment variable is set for it
 	if os.Getenv("RUN_MIGRATION") == "true" {
 		slog.Info("Attempting to run database migrations...")
 		err := runMigrations()
@@ -79,6 +86,7 @@ func main() {
 		port = "8080"
 	}
 
+	// Setup HTTP server
 	server := &http.Server{
 		Addr:    ":" + port,
 		Handler: setupRoutes(dbPool),
@@ -91,6 +99,7 @@ func main() {
 
 	shutdownChan := make(chan bool, 1)
 
+	// Start server in a goroutine
 	go func() {
 		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("HTTP server closed early", "error", err)
@@ -99,11 +108,13 @@ func main() {
 		shutdownChan <- true
 	}()
 
+	// Listen for OS signals (SIGINT, SIGTERM) to shutdown server gracefully
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-sigChan
 	slog.Warn("Received signal", "signal", sig.String())
 
+	// Shutdown server gracefully within 10 seconds
 	shutdownCtx, shutdownRelease := context.WithTimeout(ctx, 10*time.Second)
 	defer shutdownRelease()
 
@@ -117,16 +128,19 @@ func main() {
 }
 
 func setupDBPool(ctx context.Context) (*pgxpool.Pool, error) {
+	// Parse database connection string into pgxpool config
 	config, err := pgxpool.ParseConfig(dbConnStr)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse database connection string: %v", err)
 	}
 
+	// Set connection pool configurations
 	// Sets the maximum time an idle connection can remain in the pool before being closed
 	config.MaxConnIdleTime = 1 * time.Minute
 	// To prevent database and backend from ever sleeping, uncomment the following line
 	config.MinConns = 1
 
+	// Try to initialise database connection pool 5 times with exponential backoff
 	var dbPool *pgxpool.Pool
 	for i := 1; i <= 5; i++ {
 		dbPool, err = pgxpool.NewWithConfig(ctx, config)
@@ -141,6 +155,7 @@ func setupDBPool(ctx context.Context) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("Failed to initialise database connection pool after 5 attempts")
 	}
 
+	// Try to ping database connection pool 5 times with exponential backoff
 	for i := 1; i <= 5; i++ {
 		err = dbPool.Ping(ctx)
 		if err == nil && dbPool != nil {

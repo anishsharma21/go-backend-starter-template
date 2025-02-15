@@ -47,7 +47,6 @@ func SignUp(dbPool *pgxpool.Pool) http.Handler {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
-		slog.Info("New user signed up", "email", email, "first_name", firstName, "last_name", lastName)
 
 		accessToken, err := middleware.CreateAccessToken(email)
 		if err != nil {
