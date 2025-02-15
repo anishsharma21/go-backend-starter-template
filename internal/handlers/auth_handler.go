@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -33,12 +34,13 @@ func SignUp(dbPool *pgxpool.Pool) http.Handler {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
+		passwordHashString := string(passwordHash)
 
 		err = queries.SignUpNewUser(r.Context(), dbPool, models.User{
 			Email:     email,
 			FirstName: &firstName,
 			LastName:  &lastName,
-			Password:  string(passwordHash),
+			Password:  &passwordHashString,
 		})
 		if err != nil {
 			slog.Error("Failed to sign up new user", "error", err)
@@ -109,7 +111,7 @@ func Login(dbPool *pgxpool.Pool) http.Handler {
 			return
 		}
 
-		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+		err = bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(password))
 		if err != nil {
 			slog.Error("Failed to compare password hashes", "error", err)
 			http.Error(w, "Failed to find user", http.StatusNotFound)
@@ -151,6 +153,8 @@ func Login(dbPool *pgxpool.Pool) http.Handler {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
+
+		slog.Info(fmt.Sprintf("User logged in: %s", email))
 	})
 }
 

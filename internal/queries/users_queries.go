@@ -11,7 +11,7 @@ import (
 )
 
 func GetAllUsers(ctx context.Context, dbPool *pgxpool.Pool) ([]models.User, error) {
-	query := `SELECT * FROM users`
+	query := `SELECT id, first_name, last_name, email, created_at FROM users`
 
 	rows, err := dbPool.Query(ctx, query)
 	defer rows.Close()
@@ -20,7 +20,7 @@ func GetAllUsers(ctx context.Context, dbPool *pgxpool.Pool) ([]models.User, erro
 	}
 
 	var users []models.User
-	users, err = pgx.CollectRows(rows, pgx.RowToStructByName[models.User])
+	users, err = pgx.CollectRows(rows, pgx.RowToStructByNameLax[models.User])
 	if err != nil {
 		return nil, fmt.Errorf("Failed to collect users: %v\n", err)
 	}
