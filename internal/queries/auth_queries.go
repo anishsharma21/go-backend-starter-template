@@ -41,6 +41,7 @@ func SignUpNewUser(ctx context.Context, dbPool *pgxpool.Pool, user models.User) 
 	if err != nil {
 		return fmt.Errorf("failed to start transaction: %v", err)
 	}
+	defer tx.Rollback(ctx)
 
 	ct, err := tx.Exec(ctx, query, args)
 	if err != nil {
