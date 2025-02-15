@@ -156,5 +156,38 @@ func Login(dbPool *pgxpool.Pool) http.Handler {
 
 func RefreshToken() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("refresh_token")
+		if err != nil {
+			slog.Error("Failed to get refresh token cookie from request", "error", err)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		refreshToken := cookie.Value
+		email, err := middleware.VerifyToken(refreshToken)
+		if err != nil {
+			slog.Error("Error validating refresh token", "error", err)
+			http.Error(w, "Session ended. Login again.", http.StatusUnauthorized)
+			return
+		}
+
+		accessToken, err := middleware.CreateAccessToken(email)
+		if err != nil {
+			slog.Error("Failed to create new access token", "error", err, "email", email)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		response := map[string]string{
+			"token": accessToken,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(response)
+		if err != nil {
+			slog.Error("Failed to encode refresh token response", "error", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
 	})
 }

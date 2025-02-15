@@ -15,7 +15,7 @@ This project is a work in progress. Commands to set up the project locally will 
 To get started with this project, clone the repository and follow the instructions below (more instructions will be added soon).
 
 ```bash
-git clone https://github.com/yourusername/go-backend-starter-template.git
+git clone https://github.com/anishsharma21/go-backend-starter-template.git
 cd go-backend-starter-template
 ```
 

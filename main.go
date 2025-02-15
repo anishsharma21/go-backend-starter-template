@@ -168,7 +168,7 @@ func setupRoutes(dbPool *pgxpool.Pool) *http.ServeMux {
 	mux.Handle("DELETE /users", middleware.JWTAuthMiddleware(handlers.DeleteUsers(dbPool)))
 	mux.Handle("POST /signup", handlers.SignUp(dbPool))
 	mux.Handle("POST /login", handlers.Login(dbPool))
-	// mux.Handle("POST /refresh-token", handlers.RefreshToken())
+	mux.Handle("POST /refresh-token", handlers.RefreshToken())
 
 	// HTML can be dynamic and change a lot as it represents server state
 	// Consumers of these endpoints should not be concerned with the HTML structure
