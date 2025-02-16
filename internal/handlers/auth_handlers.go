@@ -153,7 +153,7 @@ func Login(dbPool *pgxpool.Pool) http.Handler {
 			return
 		}
 
-		slog.Info(fmt.Sprintf("User logged in: %s", email))
+		slog.InfoContext(r.Context(), fmt.Sprintf("User logged in: %s", email))
 	})
 }
 
