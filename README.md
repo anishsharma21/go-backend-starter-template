@@ -25,7 +25,16 @@ go mod download
 
 ### Developing locally
 
-To develop locally, first run an instance of the local database using `docker-compose`. If you don't have `docker` or `docker-compose`, its pretty easy to install them so go ahead and do that - you can use [this link](https://docs.docker.com/desktop/). Then, once you have both installed (which you can check by running `docker version` and `docker compose version`), you can run the following command to start a local postgres database which will have its data persisted:
+Begin by setting the following environment variables:
+
+```bash
+export GOOSE_DRIVER=postgres
+export GOOSE_DBSTRING="host=localhost port=5432 user=admin password=secret dbname=mydb sslmode=disable"
+export GOOSE_MIGRATION_DIR=migrations
+export JWT_SECRET_KEY=jwtsecret
+```
+
+Now you need to run an instance of the local database using `docker-compose`. If you don't have `docker` or `docker-compose`, its pretty easy to install them so go ahead and do that - you can use [this link](https://docs.docker.com/desktop/). Then, once you have both installed (which you can check by running `docker version` and `docker compose version`), you can run the following command to start a local postgres database which will have its data persisted:
 
 ```bash
 docker compose up -d
@@ -33,7 +42,7 @@ docker compose up -d
 
 The `-d` flag is to run it in detached mode - without it, all the logs will appear in your terminal and you will have start a new terminal session to run further commands. It's useful to learn about `docker` and `docker compose` so you understand how to build images and manage containers locally. You can leave this postgres database running, but if you ever want to stop it, you can run `docker compose down`.
 
-Then, you want to install `air` - this will be used for Hot Module Relooading (HMR), which is when your code will be automatically recompiled and run when changes are made:
+Then, you want to install `air` - this will be used for Hot Module Relooading (HMR), which enables your code to automatically recompiled and re-run when changes are made:
 
 ```bash
 go install github.com/air-verse/air@latest
@@ -49,15 +58,7 @@ Use the following command to install `goose` locally as it will not be included 
 go install github.com/pressly/goose/v3/cmd/goose@latest
 ```
 
-To run database migrations, you'll first need to set some environment variables that goose will use to connect to your database and locate the migration files. These environment variables are for your local database:
-
-```bash
-export GOOSE_DRIVER=postgres
-export GOOSE_DBSTRING="host=localhost port=5432 user=admin password=secret dbname=mydb sslmode=disable"
-export GOOSE_MIGRATION_DIR=migrations
-```
-
-Now, with your database running in the background from the previous `docker compose` instructions, check that `goose` is correctly connected to your database by running the following command:
+With your database running in the background from the previous `docker compose` instructions, check that `goose` is correctly connected to your database by running the following command:
 
 ```bash
 goose status
@@ -82,12 +83,6 @@ goose down
 ```
 
 When updating templates or handlers that render them, make sure to reference the `globalSelectors.go` file where CSS selectors are present in to reduce hard coded values and duplication throughout the code.
-
-You should also set the following environment variable locally for testing and development purposes:
-
-```bash
-export JWT_SECRET_KEY=secret
-```
 
 Tests run locally use the local postgres database. To replicate the CICD environment, you can clear your database before running the tests. Use the following command to run tests locally:
 
